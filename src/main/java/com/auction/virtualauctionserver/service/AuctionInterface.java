@@ -16,6 +16,7 @@ import com.auction.virtualauctionserver.model.RoomStatusResponse;
 
 public interface AuctionInterface {
 
+	String Q_SELECT_RANDOM_ROOM_ID = "select * from roomslist where RoomStatus='Start' ORDER BY RAND() LIMIT 1;";
 	String Q_INSERT_USER = "insert into users (Username, Password, EmailId) values (?,?,?);";
 	String Q_CHECK_USER = "select * from users where Username = '";
 	String Q_INSERT_INTO_ROOMS_LIST = "insert into roomslist (RoomId, RoomStatus, Users) values (?,?,?);";
@@ -30,7 +31,7 @@ public interface AuctionInterface {
 	String Q_WHERE_TEAM = " where Team = '";
 	String Q_WHERE_TEAM_AND = " and Username != '";
 	String Q_ROOM_STATUS_AND = " where ReJoinRoom='Yes'";
-	String Q_ROOM_HOST = " and where Host='Yes'";
+	String Q_ROOM_HOST = " and Host!='Yes'";
 	String Q_UPDATE_TEAM_NAME = "update {Table} set Team=? where Username='";
 	String Q_UPDATE_ROOM_STATUS = "update roomslist set RoomStatus=? where RoomId= '";
 	String Q_UPDATE_ROUND = "update roomslist set CurrentRound=? where RoomId= '";
@@ -63,7 +64,7 @@ public interface AuctionInterface {
 	String Q_UNSOLD_PLAYERS_LIST = "select * from {Table}";
 	String Q_GET_TOTAL_UNSOLD_PLAYERS = "select * from {RoomId}_round2_unsoldlist a left outer join {RoomId}_round3_auctionlist b on a.playername=b.playername where b.playername is null";
 
-	Connection getConnection() throws SQLException, ClassNotFoundException;
+	Connection getConnection(boolean autoCommitValue) throws SQLException, ClassNotFoundException;
 
 	void close(Connection con) throws SQLException;
 
@@ -95,7 +96,9 @@ public interface AuctionInterface {
 
 	void register(Connection con, Register register) throws SQLException;
 
-	String getUsers(Connection con, String roomIdCreate, String input) throws SQLException;
+	String getRoomResult(Connection con, String roomIdCreate, String input) throws SQLException;
+	
+	String getRandomRoomId(Connection con) throws SQLException;
 
 	void insertIntoRoomList(Connection con, String roomId) throws SQLException;
 

@@ -7,6 +7,7 @@ import com.auction.virtualauctionserver.model.Bid;
 import com.auction.virtualauctionserver.model.NamesList;
 import com.auction.virtualauctionserver.model.PlayerInfo;
 import com.auction.virtualauctionserver.model.PlayerInfoList;
+import com.auction.virtualauctionserver.model.PlayerName;
 import com.auction.virtualauctionserver.model.PlayerStatus;
 import com.auction.virtualauctionserver.model.ResponseMessage;
 import com.auction.virtualauctionserver.model.RoomInfo;
@@ -28,18 +29,20 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(true);
 
 			try {
 
-				String round = auctionService.getUsers(con, roomInfo.getRoomId(), "CurrentRound");
-
+				//Thread.sleep(1000);
+				String round = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_CURRENT_ROUND);
+				System.out.println(round);
+				
 				String sets = "";
-				if (round.equalsIgnoreCase("round2")) {
+				if (round.equalsIgnoreCase(Constants.I_ROUND2)) {
 
 					sets = roomInfo.getRoomId() + "_round1_unsoldlist";
 
-				} else if (round.equalsIgnoreCase("round3")) {
+				} else if (round.equalsIgnoreCase(Constants.I_ROUND3)) {
 
 					sets = roomInfo.getRoomId() + "_round2_unsoldlistshort";
 
@@ -54,16 +57,16 @@ public class Auction {
 
 					while (true) {
 
-						String status = auctionService.getUsers(con, roomInfo.getRoomId(), "RoomStatus");
+						String status = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_ROOM_STATUS);
 
-						if (status.equals("TempPaused") || status.equals("Paused")) {
+						if (status.equals(Constants.I_PAUSED_STATUS) || status.equals(Constants.I_HALT_STATUS)) {
 
 							pause = true;
 							break;
 
 						}
 
-						String skip = auctionService.getUsers(con, roomInfo.getRoomId(), "Skip");
+						String skip = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_SKIP);
 
 						String playerName = auctionService.checkPlayerName(con, roomInfo.getRoomId(), round,
 								setsSplit[i]);
@@ -72,7 +75,7 @@ public class Auction {
 
 							PlayerInfo playerInfo = auctionService.getPlayerInfoToAdd(con, playerName, setsSplit[i]);
 
-							if (skip.equalsIgnoreCase("SkipAll") || skip.equalsIgnoreCase("SkipOneSet")) {
+							if (skip.equalsIgnoreCase(Constants.I_SKIP_ENTIRE_ROUND) || skip.equalsIgnoreCase(Constants.I_SKIP_CURRENT_SET)) {
 
 								auctionService.addPlayerInfo(con, roomInfo.getRoomId(), round, setsSplit[i], 0,
 										playerInfo);
@@ -81,10 +84,12 @@ public class Auction {
 
 								auctionService.addPlayerInfo(con, roomInfo.getRoomId(), round, setsSplit[i], 6,
 										playerInfo);
+								
+								
 
 								while (true) {
 
-									String playerNameTime = auctionService.getTime(con, roomInfo.getRoomId(), round);
+							String playerNameTime = auctionService.getTime(con, roomInfo.getRoomId(), round);
 									String[] split = playerNameTime.split(",");
 									int time = Integer.parseInt(split[0]) - 1;
 									playerName = split[1];
@@ -97,7 +102,8 @@ public class Auction {
 									}
 
 									Thread.sleep(2000);
-
+									
+						
 								}
 							}
 
@@ -159,6 +165,8 @@ public class Auction {
 							auctionService.updatePlayerInfo(con, roomInfo.getRoomId(), round,
 									playerStatus.getPlayerName(), playerStatus.getTeam(),
 									playerStatus.getTotalPriceinLakhs());
+							
+					
 
 						} else {
 
@@ -166,11 +174,12 @@ public class Auction {
 						}
 					}
 
-					String skip = auctionService.getUsers(con, roomInfo.getRoomId(), "Skip");
+					String skip = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_SKIP);
 
-					if (skip.equals("SkipOneSet")) {
+					if (skip.equals(Constants.I_SKIP_CURRENT_SET)) {
 
-						auctionService.updateSkip(con, roomInfo.getRoomId(), "No");
+						auctionService.updateSkip(con, roomInfo.getRoomId(), Constants.I_NO);
+			
 					}
 
 					if (pause) {
@@ -179,38 +188,40 @@ public class Auction {
 
 				}
 
-				String skip = auctionService.getUsers(con, roomInfo.getRoomId(), "Skip");
+				String skip = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_SKIP);
 
-				if (skip.equals("SkipAll")) {
+				if (skip.equals(Constants.I_SKIP_ENTIRE_ROUND)) {
 
-					auctionService.updateSkip(con, roomInfo.getRoomId(), "No");
+					auctionService.updateSkip(con, roomInfo.getRoomId(), Constants.I_NO);
+					con.commit();
 				}
 
 				if (!pause) {
 
-					if (round.equalsIgnoreCase("round1")) {
+					if (round.equalsIgnoreCase(Constants.I_ROUND1)) {
 
-						auctionService.updateRound(con, roomInfo.getRoomId(), "round2");
-						auctionService.updateRoomStatus(con, roomInfo.getRoomId(), "TempPausedForRound2");
+						auctionService.updateRound(con, roomInfo.getRoomId(), Constants.I_ROUND2);
+						auctionService.updateRoomStatus(con, roomInfo.getRoomId(), Constants.I_WAITING_FOR_ROUND2);
 
-					} else if (round.equalsIgnoreCase("round2")) {
+					} else if (round.equalsIgnoreCase(Constants.I_ROUND2)) {
 
-						auctionService.updateRound(con, roomInfo.getRoomId(), "round3");
-						auctionService.updateRoomStatus(con, roomInfo.getRoomId(), "TempPausedForRound3");
+						auctionService.updateRound(con, roomInfo.getRoomId(), Constants.I_ROUND3);
+						auctionService.updateRoomStatus(con, roomInfo.getRoomId(), Constants.I_WAITING_FOR_ROUND3);
 
 					}
 
 				}
+			
 
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				// playerStatus.setPlayerName("Error");
+			} catch (Exception exception) {
+				exception.printStackTrace();
+				FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-
+		} catch (Exception exception) {
+			FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 		}
 	}
 
@@ -222,31 +233,38 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
-				String round = auctionService.getUsers(con, bid.getRoomId(), "CurrentRound");
+				
+				PlayerStatus playerStatus = new PlayerStatus();
+				playerStatus = auctionService.teamStatus(con, bid.getRoomId(), bid.getTeam(), playerStatus);
+				String round = auctionService.getRoomResult(con, bid.getRoomId(), Constants.I_CURRENT_ROUND);
 				String totalPriceTeam = auctionService.getPlayerPrice(con, bid.getRoomId(), round, bid.getPlayerName());
 				String[] split = totalPriceTeam.split(",");
 				int price = Integer.parseInt(split[0]);
 				String team = split[1];
+				
+				
 
-				if (!team.equals("NA")) {
+				if (!team.equals(Constants.I_NA)) {
 
 					price = Functions.calculatePrice(price);
 
 				}
 				auctionService.updatePrice(con, bid.getRoomId(), round, bid.getPlayerName(), bid.getTeam(), price);
+				con.commit();
 
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				responseMessage.setMessage("Error");
+			} catch (Exception exception) {
+				responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(bid.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			responseMessage.setMessage("Error");
+		} catch (Exception exception) {
+			responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(bid.getRoomId(), exception);
 		}
 
 		return responseMessage;
@@ -259,26 +277,30 @@ public class Auction {
 		PlayerStatus playerStatus = new PlayerStatus();
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
-				String round = auctionService.getUsers(con, team.getRoomId(), "CurrentRound");
+				String round = auctionService.getRoomResult(con, team.getRoomId(), Constants.I_CURRENT_ROUND);
 				playerStatus = auctionService.playerStatus(con, team.getRoomId(), round);
 
 				playerStatus = auctionService.teamStatus(con, team.getRoomId(), team.getTeam(), playerStatus);
 				playerStatus.setRound(round);
-				playerStatus.setHostName(auctionService.getUserbyHost(con, team.getRoomId(), "Username"));
-				playerStatus.setRoomStatus(auctionService.getUsers(con, team.getRoomId(), "RoomStatus"));
+				playerStatus.setHostName(auctionService.getUserbyHost(con, team.getRoomId(), Constants.I_USERNAME));
+				playerStatus.setRoomStatus(auctionService.getRoomResult(con, team.getRoomId(), Constants.I_ROOM_STATUS));
+				
+				team.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				playerStatus.setPlayerName("Error");
+			} catch (Exception exception) {
+				playerStatus.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(team.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			playerStatus.setRoomId("Error");
+		} catch (Exception exception) {
+			playerStatus.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(team.getRoomId(), exception);
 
 		}
 		return playerStatus;
@@ -292,21 +314,33 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
+				
+				String status = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_ROOM_STATUS);
+				
+				if(status.equals(Constants.I_ONGOING_STATUS)) {
 
-				auctionService.updateRoomStatus(con, roomInfo.getRoomId(), "TempPaused");
+				auctionService.updateRoomStatus(con, roomInfo.getRoomId(), Constants.I_PAUSED_STATUS);
+				
+				} else {
+					
+					roomInfo.setMessage(Constants.ALREADY_PAUSED_MESSAGE);
+				}
+				roomInfo.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				responseMessage.setMessage("Error");
+			} catch (Exception exception) {
+				responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			responseMessage.setMessage("Error");
+		} catch (Exception exception) {
+			responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 		}
 
 		return responseMessage;
@@ -320,16 +354,16 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 
-				String status = auctionService.getUsers(con, roomInfo.getRoomId(), "RoomStatus");
+				String status = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_ROOM_STATUS);
 
-				if (status.equals("TempPaused") || status.equals("Paused") || status.equals("TempPausedForRound2")
-						|| status.equals("TempPausedForRound3")) {
+				if (status.equals(Constants.I_PAUSED_STATUS) || status.equals(Constants.I_HALT_STATUS) || status.equals(Constants.I_WAITING_FOR_ROUND2)
+						|| status.equals(Constants.I_WAITING_FOR_ROUND3)) {
 
-					String round = auctionService.getUsers(con, roomInfo.getRoomId(), "CurrentRound");
+					String round = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_CURRENT_ROUND);
 					String playerNameTime = auctionService.getTime(con, roomInfo.getRoomId(), round);
 					String[] split = playerNameTime.split(",");
 
@@ -340,22 +374,30 @@ public class Auction {
 
 					if (time == 0) {
 
-						auctionService.updateRoomStatus(con, roomInfo.getRoomId(), "Ongoing");
+						auctionService.updateRoomStatus(con, roomInfo.getRoomId(), Constants.I_ONGOING_STATUS);
 
 						AuctionRunning auctionRunning = new AuctionRunning(roomInfo);
 						new Thread(auctionRunning).start();
+						
+						roomInfo.setMessage(Constants.OK_MESSAGE);
+						con.commit();
+					} else {
+						roomInfo.setMessage(Constants.ALREADY_PLAY_MESSAGE);
 					}
+				} else {
+					roomInfo.setMessage(Constants.ALREADY_PLAY_MESSAGE);
 				}
 
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				responseMessage.setMessage("Error");
+			} catch (Exception exception) {
+				responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			responseMessage.setMessage("Error");
+		} catch (Exception exception) {
+			responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 		}
 		return responseMessage;
 	}
@@ -368,21 +410,50 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
+				
+				String skip = auctionService.getRoomResult(con, skipInfo.getRoomId(), Constants.I_SKIP);
 
+				if(skipInfo.getSkipType().equals("Unskip")) {
+					
+					if(skip.contains(Constants.I_SKIP)) {
+					
+					auctionService.updateSkip(con, skipInfo.getRoomId(), Constants.I_NO);
+					
+					} else {
+						
+						skipInfo.setMessage(Constants.ALREADY_UNSKIPPED_MESSAGE);
+					}
+					
+				} else {
+					
+					if(skip.contains(Constants.I_SKIP)) {
+						
+						skipInfo.setMessage(Constants.ALREADY_SKIPPED_MESSAGE);
+						
+					} else {
+				
 				auctionService.updateSkip(con, skipInfo.getRoomId(), skipInfo.getSkipType());
+				
+					}
+				
+				}
+				
+				skipInfo.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				responseMessage.setMessage("Error");
+			} catch (Exception exception) {
+				responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(skipInfo.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			responseMessage.setMessage("Error");
+		} catch (Exception exception) {
+			responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(skipInfo.getRoomId(), exception);
 		}
 
 		return responseMessage;
@@ -396,22 +467,26 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 
-				String roomStatus = auctionService.getUsers(con, roomInfo.getRoomId(), "RoomStatus");
+				String roomStatus = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_ROOM_STATUS);
 				namesList = auctionService.getUsernamesList(con, roomInfo.getRoomId(), roomStatus,
 						roomInfo.getUsername());
+				roomInfo.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-				ex.printStackTrace();
+			} catch (Exception exception) {
+				namesList.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-
+		} catch (Exception exception) {
+			namesList.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 		}
 
 		return namesList;
@@ -425,20 +500,24 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 
 				namesList = auctionService.getUnsoldPlayersList(con, roomInfo.getRoomId());
+				roomInfo.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-
+			} catch (Exception exception) {
+				namesList.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-
+		} catch (Exception exception) {
+			namesList.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 		}
 
 		return namesList;
@@ -452,22 +531,26 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 
 				String[] splitUsername = roomInfo.getUsername().split(",");
-				auctionService.updateHost(con, roomInfo.getRoomId(), splitUsername[0], "No");
-				auctionService.updateHost(con, roomInfo.getRoomId(), splitUsername[1], "Yes");
+				auctionService.updateHost(con, roomInfo.getRoomId(), splitUsername[0], Constants.I_NO);
+				auctionService.updateHost(con, roomInfo.getRoomId(), splitUsername[1], Constants.I_YES);
+				roomInfo.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-				responseMessage.setMessage("Error");
+			} catch (Exception exception) {
+				responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			responseMessage.setMessage("Error");
+		} catch (Exception exception) {
+			responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 		}
 
 		return responseMessage;
@@ -481,7 +564,7 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 
@@ -497,20 +580,24 @@ public class Auction {
 						PlayerInfo playerInfo = auctionService.getPlayerInfoToAdd(con, playerName,
 								namesList.getRoomId() + "_round2_unsoldlist");
 
-						auctionService.addPlayerInfo(con, namesList.getRoomId(), "round2", "ShortList", 0, playerInfo);
+						auctionService.addPlayerInfo(con, namesList.getRoomId(), Constants.I_ROUND2, Constants.I_SHORT_LIST, 0, playerInfo);
 
 					}
 				}
+				
+				namesList.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				responseMessage.setMessage("Error");
+			} catch (Exception exception) {
+				responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(namesList.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			responseMessage.setMessage("Error");
+		} catch (Exception exception) {
+			responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(namesList.getRoomId(), exception);
 		}
 
 		return responseMessage;
@@ -524,21 +611,25 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 
-				roomStatus.setHostName(auctionService.getUserbyHost(con, roomInfo.getRoomId(), "Username"));
-				roomStatus.setRoomStatus(auctionService.getUsers(con, roomInfo.getRoomId(), "RoomStatus"));
+				roomStatus.setHostName(auctionService.getUserbyHost(con, roomInfo.getRoomId(), Constants.I_USERNAME));
+				roomStatus.setRoomStatus(auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_ROOM_STATUS));
+				roomInfo.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-				roomStatus.setMessage("Error");
+			} catch (Exception exception) {
+				roomStatus.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			roomStatus.setMessage("Error");
+		} catch (Exception exception) {
+			roomStatus.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 		}
 
 		return roomStatus;
@@ -552,23 +643,27 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 
-				String round = auctionService.getUsers(con, roomInfo.getRoomId(), "CurrentRound");
+				String round = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_CURRENT_ROUND);
 				String playerNameTime = auctionService.getTime(con, roomInfo.getRoomId(), round);
 				String[] splitPlayerNameTime = playerNameTime.split(",");
 				auctionService.getCurrentSetPlayersList(con, splitPlayerNameTime[0]);
+				roomInfo.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-				namesList.setMessage("Error");
+			} catch (Exception exception) {
+				namesList.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			namesList.setMessage("Error");
+		} catch (Exception exception) {
+			namesList.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 		}
 
 		return namesList;
@@ -582,35 +677,39 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 
 				String unsoldType = "";
 
-				String round = auctionService.getUsers(con, roomInfo.getRoomId(), "CurrentRound");
-				String status = auctionService.getUsers(con, roomInfo.getRoomId(), "RoomStatus");
+				String round = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_CURRENT_ROUND);
+				String status = auctionService.getRoomResult(con, roomInfo.getRoomId(), Constants.I_ROOM_STATUS);
+				roomInfo.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-				if (round.equals("round2")) {
-					unsoldType = "round1";
-				} else if (round.equals("round3")) {
+				if (round.equals(Constants.I_ROUND2)) {
+					unsoldType = Constants.I_ROUND1;
+				} else if (round.equals(Constants.I_ROUND3)) {
 					if (status.equals("Finished")) {
-						unsoldType = "round3";
+						unsoldType = Constants.I_ROUND3;
 					} else {
-						unsoldType = "round2";
+						unsoldType = Constants.I_ROUND2;
 					}
 				}
 
 				playerInfoList = auctionService.playerInfoList(con, roomInfo.getRoomId(), unsoldType);
 
-			} catch (Exception ex) {
-				playerInfoList.setMessage("Error");
+			} catch (Exception exception) {
+				playerInfoList.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			playerInfoList.setMessage("Error");
+		} catch (Exception exception) {
+			playerInfoList.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
 		}
 
 		return playerInfoList;
@@ -625,7 +724,7 @@ public class Auction {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 
@@ -639,43 +738,79 @@ public class Auction {
 				playerInfoList.setForeigners(playerStatus.getForeigners());
 				playerInfoList.setTotal(playerStatus.getTotal());
 				playerInfoList.setBudget(playerStatus.getBudget());
+				team.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-				playerInfoList.setMessage("Error");
+			} catch (Exception exception) {
+				playerStatus.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(team.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			playerInfoList.setMessage("Error");
+		} catch (Exception exception) {
+			playerStatus.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(team.getRoomId(), exception);
 		}
 
 		return playerInfoList;
 	}
 
-	public static ResponseMessage a(RoomInfo roomInfo) {
+	public static ResponseMessage addPlayerToTeamAfterAuction(PlayerName playerName) {
 
 		Connection con = null;
 		AuctionInterface auctionService = new AuctionService();
-		ResponseMessage playerInfoList = new ResponseMessage();
+		ResponseMessage responseMessage = new ResponseMessage();
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
+				
+				playerName.setMessage(Constants.OK_MESSAGE);
+				con.commit();
 
-			} catch (Exception ex) {
-				playerInfoList.setMessage("Error");
+			} catch (Exception exception) {
+				responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(playerName.getRoomId(), exception);
 			} finally {
 				con.close();
 			}
 
-		} catch (Exception ex) {
-			playerInfoList.setMessage("Error");
+		} catch (Exception exception) {
+			responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(playerName.getRoomId(), exception);
 		}
 
-		return playerInfoList;
+		return responseMessage;
+	}
+	
+	public static ResponseMessage a(RoomInfo roomInfo) {
+
+		Connection con = null;
+		AuctionInterface auctionService = new AuctionService();
+		ResponseMessage responseMessage = new ResponseMessage();
+
+		try {
+
+			con = auctionService.getConnection(false);
+
+			try {
+
+			} catch (Exception exception) {
+				responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+				FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
+			} finally {
+				con.close();
+			}
+
+		} catch (Exception exception) {
+			responseMessage.setMessage(Constants.COMMON_ERROR_MESSAGE);
+			FileUtil.createAndUpdateErrorLog(roomInfo.getRoomId(), exception);
+		}
+
+		return responseMessage;
 	}
 
 }

@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import com.auction.virtualauctionserver.functions.Constants;
 import com.auction.virtualauctionserver.functions.Functions;
 import com.auction.virtualauctionserver.model.AuctionInfo;
 import com.auction.virtualauctionserver.model.AuctionParams;
@@ -27,10 +28,11 @@ import com.auction.virtualauctionserver.service.AuctionInterface;
 
 public class AuctionDAO implements AuctionInterface {
 
-	public Connection getConnection() throws SQLException, ClassNotFoundException {
+	public Connection getConnection(boolean autoCommitValue) throws SQLException, ClassNotFoundException {
 
 		Class.forName("com.mysql.jdbc.Driver");
 		Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/virtualauction", "root", "123456");
+		conn.setAutoCommit(autoCommitValue);
 
 		return conn;
 	}
@@ -54,7 +56,7 @@ public class AuctionDAO implements AuctionInterface {
 	public void createUnsoldListTable(Connection con, String roomId, String round) throws SQLException {
 
 		String listName = "";
-		if (round.equals("ShortList")) {
+		if (round.equals(Constants.I_SHORT_LIST)) {
 			listName = "round2_unsoldlistshort";
 		} else {
 			listName = round + "_unsoldlist";
@@ -120,7 +122,7 @@ public class AuctionDAO implements AuctionInterface {
 	public void deleteUnsoldListTable(Connection con, String roomId, String round) throws SQLException {
 
 		String listName = "";
-		if (round.equals("ShortList")) {
+		if (round.equals(Constants.I_SHORT_LIST)) {
 			listName = "round2_unsoldlistshort";
 		} else {
 			listName = round + "_unsoldlist";
@@ -206,7 +208,7 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				if (login.getUsername().equals(rs.getString("Username"))
+				if (login.getUsername().equals(rs.getString(Constants.I_USERNAME))
 						&& login.getPassword().equals(rs.getString("Password"))) {
 					userExist = true;
 				}
@@ -230,7 +232,27 @@ public class AuctionDAO implements AuctionInterface {
 		}
 	}
 
-	public String getUsers(Connection con, String roomIdCreate, String input) throws SQLException {
+	public String getRandomRoomId(Connection con) throws SQLException {
+
+		String roomOutput = "";
+		String query_no = (AuctionInterface.Q_SELECT_RANDOM_ROOM_ID);
+		try (PreparedStatement sltmt_no = con.prepareStatement(query_no)) {
+			ResultSet rs = sltmt_no.executeQuery();
+
+			while (rs.next()) {
+
+				if (rs.getString("RoomId") == null) {
+					roomOutput = "";
+				} else {
+					roomOutput = rs.getString("RoomId");
+				}
+			}
+		}
+
+		return roomOutput;
+	}
+
+	public String getRoomResult(Connection con, String roomIdCreate, String input) throws SQLException {
 
 		String roomOutput = "";
 		String query_no = (AuctionInterface.Q_GET_USERS + roomIdCreate + "'");
@@ -239,8 +261,9 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				if (input.equals("Users") || input.equals("MaxForeigners") || input.equals("MinTotal")
-						|| input.equals("MaxTotal") || input.equals("MaxBudget")) {
+				if (input.equals(Constants.I_USERS) || input.equals(Constants.I_MAX_FOREIGNERS)
+						|| input.equals(Constants.I_MIN_TOTAL) || input.equals(Constants.I_MAX_TOTAL)
+						|| input.equals(Constants.I_MAX_BUDGET)) {
 					roomOutput = String.valueOf(rs.getInt(input));
 				} else {
 					if (rs.getString(input) == null) {
@@ -252,6 +275,7 @@ public class AuctionDAO implements AuctionInterface {
 			}
 		}
 
+		
 		return roomOutput;
 	}
 
@@ -260,7 +284,7 @@ public class AuctionDAO implements AuctionInterface {
 		String query = (AuctionInterface.Q_INSERT_INTO_ROOMS_LIST);
 		try (PreparedStatement stmt = con.prepareStatement(query)) {
 			stmt.setString(1, roomId);
-			stmt.setString(2, "Start");
+			stmt.setString(2, Constants.I_START_STATUS);
 			stmt.setInt(3, 1);
 
 			stmt.execute();
@@ -275,7 +299,7 @@ public class AuctionDAO implements AuctionInterface {
 		try (PreparedStatement stmt_room = con.prepareStatement(query_room)) {
 			stmt_room.setString(1, username);
 			stmt_room.setString(2, host);
-			stmt_room.setString(3, "Yes");
+			stmt_room.setString(3, Constants.I_YES);
 
 			stmt_room.execute();
 
@@ -339,7 +363,7 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				String teamName = rs.getString("Team");
+				String teamName = rs.getString(Constants.I_TEAM);
 				if (!rs.equals("") || !rs.equals(null)) {
 					teamExist = true;
 				}
@@ -359,7 +383,7 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				randomUser = rs.getString("Username");
+				randomUser = rs.getString(Constants.I_USERNAME);
 
 			}
 
@@ -435,7 +459,7 @@ public class AuctionDAO implements AuctionInterface {
 
 		}
 	}
-	
+
 	public String getRandomTeam(Connection con, String roomId) throws SQLException {
 
 		String randomTeam = "";
@@ -446,8 +470,8 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				randomTeam = rs.getString("PlayerName");
-				
+				randomTeam = rs.getString(Constants.I_TEAM);
+
 			}
 		}
 		return randomTeam;
@@ -459,7 +483,7 @@ public class AuctionDAO implements AuctionInterface {
 		StringBuilder teamStringBuilder = new StringBuilder();
 
 		String query_room = "";
-		if (roomStatus.equals("Start")) {
+		if (roomStatus.equals(Constants.I_START_STATUS)) {
 
 			query_room = (AuctionInterface.Q_ROOM_STATUS).replaceAll("\\{Table\\}", roomId + "_room");
 		} else if (roomStatus.equals("Paused")) {
@@ -471,12 +495,12 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				usernameStringBuilder.append(rs.getString("Username"));
+				usernameStringBuilder.append(rs.getString(Constants.I_USERNAME));
 				usernameStringBuilder.append(",");
-				if (rs.getString("Team") == null) {
+				if (rs.getString(Constants.I_TEAM) == null) {
 					teamStringBuilder.append("NA");
 				} else {
-					teamStringBuilder.append(rs.getString("Team"));
+					teamStringBuilder.append(rs.getString(Constants.I_TEAM));
 				}
 				teamStringBuilder.append(",");
 
@@ -535,10 +559,11 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				if (rs.getString("Team") == null) {
+				if (rs.getString(Constants.I_TEAM) == null) {
 					totalPriceTeam = String.valueOf(rs.getInt("TotalPrice_in_lakh")) + ",NA";
 				} else {
-					totalPriceTeam = String.valueOf(rs.getInt("TotalPrice_in_lakh")) + "," + rs.getString("Team");
+					totalPriceTeam = String.valueOf(rs.getInt("TotalPrice_in_lakh")) + ","
+							+ rs.getString(Constants.I_TEAM);
 				}
 			}
 		}
@@ -572,7 +597,7 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				playerNameTime = rs.getInt("Time") + "," + rs.getString("PlayerName");
+				playerNameTime = rs.getInt("Time") + "," + rs.getString(Constants.I_PLAYER_NAME);
 
 			}
 		}
@@ -607,7 +632,7 @@ public class AuctionDAO implements AuctionInterface {
 
 				playerStatus.setRoomId(roomId);
 				playerStatus.setPlayerId(rs.getInt("PlayerId"));
-				playerStatus.setPlayerName(rs.getString("PlayerName"));
+				playerStatus.setPlayerName(rs.getString(Constants.I_PLAYER_NAME));
 				playerStatus.setPlayerCountry(rs.getString("PlayerCountry"));
 				playerStatus.setPlayerRole(rs.getString("PlayerRole"));
 				playerStatus.setBattingStyle(rs.getString("BattingStyle"));
@@ -615,10 +640,10 @@ public class AuctionDAO implements AuctionInterface {
 				playerStatus.setBattingPosition(rs.getString("BattingPosition"));
 				playerStatus.setTotalPriceinLakhs(rs.getInt("TotalPrice_in_lakh"));
 				playerStatus.setSet(rs.getString("SetName"));
-				if (rs.getString("Team") == null) {
+				if (rs.getString(Constants.I_TEAM) == null) {
 					playerStatus.setTeam("");
 				} else {
-					playerStatus.setTeam(rs.getString("Team"));
+					playerStatus.setTeam(rs.getString(Constants.I_TEAM));
 				}
 				playerStatus.setTime(rs.getInt("Time"));
 
@@ -655,16 +680,17 @@ public class AuctionDAO implements AuctionInterface {
 	public String checkPlayerName(Connection con, String roomId, String round, String set) throws SQLException {
 
 		String playerName = "";
-
+		
 		String query = "";
-		if (!round.contains("round")) {
-
-			query = AuctionInterface.Q_PLAYER_INFO + roomId + set + AuctionInterface.Q_WHERE_PLAYER_NAME + round + "'";
+		if (round.contains("round")) {
+			
+			query = AuctionInterface.Q_PLAYER_INFO + set + AuctionInterface.Q_JOIN + roomId + "_" + round
+					+ AuctionInterface.Q_RANDOM;
 
 		} else {
 
-			query = AuctionInterface.Q_PLAYER_INFO + set + AuctionInterface.Q_JOIN + roomId + "_" + round
-					+ AuctionInterface.Q_RANDOM;
+			query = AuctionInterface.Q_PLAYER_INFO + roomId + "_" + set + AuctionInterface.Q_WHERE_PLAYER_NAME + round + "'";
+			
 		}
 
 		try (PreparedStatement sltmt = con.prepareStatement(query)) {
@@ -672,10 +698,10 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				if (rs.getString("PlayerName") == null) {
+				if (rs.getString(Constants.I_PLAYER_NAME) == null) {
 					playerName = "";
 				} else {
-					playerName = rs.getString("PlayerName");
+					playerName = rs.getString(Constants.I_PLAYER_NAME);
 				}
 			}
 		}
@@ -691,7 +717,7 @@ public class AuctionDAO implements AuctionInterface {
 			while (rs.next()) {
 
 				playerInfo.setPlayerId(rs.getInt("PlayerId"));
-				playerInfo.setPlayerName(rs.getString("PlayerName"));
+				playerInfo.setPlayerName(rs.getString(Constants.I_PLAYER_NAME));
 				playerInfo.setPlayerCountry(rs.getString("PlayerCountry"));
 				playerInfo.setPlayerRole(rs.getString("PlayerRole"));
 				playerInfo.setBattingStyle(rs.getString("BattingStyle"));
@@ -708,7 +734,7 @@ public class AuctionDAO implements AuctionInterface {
 			PlayerInfo playerInfo) throws SQLException {
 
 		String query = "";
-		if (!set.equals("ShortList")) {
+		if (!set.equals(Constants.I_SHORT_LIST)) {
 			query = (AuctionInterface.Q_INSERT_PLAYER_IN_LIST).replaceAll("\\{Table\\}",
 					roomId + "_" + round + "_auctionlist");
 		} else {
@@ -727,7 +753,7 @@ public class AuctionDAO implements AuctionInterface {
 			stmt.setInt(8, playerInfo.getTotalPriceinLakhs());
 			stmt.setDouble(9, 0);
 
-			if (!set.equals("ShortList")) {
+			if (!set.equals(Constants.I_SHORT_LIST)) {
 				stmt.setString(10, set);
 				stmt.setInt(11, initialTime);
 			}
@@ -826,7 +852,7 @@ public class AuctionDAO implements AuctionInterface {
 		ArrayList<String> arrayList = new ArrayList<>();
 
 		String query_room = "";
-		if (roomStatus.equals("Start")) {
+		if (roomStatus.equals(Constants.I_START_STATUS)) {
 
 			query_room = (AuctionInterface.Q_ROOM_STATUS).replaceAll("\\{Table\\}", roomId + "_room");
 		} else {
@@ -838,7 +864,7 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				arrayList.add(rs.getString("Username"));
+				arrayList.add(rs.getString(Constants.I_USERNAME));
 
 			}
 		}
@@ -859,7 +885,7 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				arrayList.add(rs.getString("PlayerName"));
+				arrayList.add(rs.getString(Constants.I_PLAYER_NAME));
 
 			}
 		}
@@ -880,7 +906,7 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				arrayList.add(rs.getString("PlayerName"));
+				arrayList.add(rs.getString(Constants.I_PLAYER_NAME));
 
 			}
 		}
@@ -900,6 +926,14 @@ public class AuctionDAO implements AuctionInterface {
 		ArrayList<String> battingPositionList = new ArrayList<>();
 		ArrayList<String> priceInLakhsList = new ArrayList<>();
 		ArrayList<String> priceInCroresList = new ArrayList<>();
+		playerNameList.add(Constants.I_PLAYER_NAME_HEADER);
+		playerCountryList.add(Constants.I_PLAYER_COUNTRY_HEADER);
+		playerRoleList.add(Constants.I_PLAYER_ROLE_HEADER);
+		battingStyleList.add(Constants.I_BATTING_STYLE_HEADER);
+		bowlingStyleList.add(Constants.I_BOWLING_STYLE_HEADER);
+		battingPositionList.add(Constants.I_BATTING_POSITION_HEADER);
+		priceInLakhsList.add(Constants.I_PRICE_IN_LAKHS_HEADER);
+		priceInCroresList.add(Constants.I_PRICE_IN_CRORES_HEADER);
 
 		String query = "";
 		if (team.equals("unsold1")) {
@@ -925,7 +959,7 @@ public class AuctionDAO implements AuctionInterface {
 
 			while (rs.next()) {
 
-				playerNameList.add(rs.getString("PlayerName"));
+				playerNameList.add(rs.getString(Constants.I_PLAYER_NAME));
 				playerCountryList.add(rs.getString("PlayerCountry"));
 				playerRoleList.add(rs.getString("PlayerRole"));
 				battingStyleList.add(rs.getString("BattingStyle"));

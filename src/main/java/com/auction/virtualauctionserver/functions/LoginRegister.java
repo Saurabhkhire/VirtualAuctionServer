@@ -20,7 +20,7 @@ public class LoginRegister {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 
@@ -32,6 +32,7 @@ public class LoginRegister {
 				}
 
 			} catch (Exception ex) {
+				ex.printStackTrace();
 				responseMessage.setMessage("Error");
 			} finally {
 				con.close();
@@ -52,7 +53,7 @@ public class LoginRegister {
 
 		try {
 
-			con = auctionService.getConnection();
+			con = auctionService.getConnection(false);
 
 			try {
 

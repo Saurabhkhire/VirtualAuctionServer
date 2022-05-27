@@ -24,8 +24,8 @@ public class AuctionService implements AuctionInterface {
 	}
 
 	// @Override
-	public Connection getConnection() throws SQLException, ClassNotFoundException {
-		return auctionInterface.getConnection();
+	public Connection getConnection(boolean autoCommitValue) throws SQLException, ClassNotFoundException {
+		return auctionInterface.getConnection(autoCommitValue);
 	}
 
 	// @Override
@@ -89,8 +89,12 @@ public class AuctionService implements AuctionInterface {
 		auctionInterface.register(con, register);
 	}
 
-	public String getUsers(Connection con, String roomIdCreate, String input) throws SQLException {
-		return auctionInterface.getUsers(con, roomIdCreate, input);
+	public String getRoomResult(Connection con, String roomIdCreate, String input) throws SQLException {
+		return auctionInterface.getRoomResult(con, roomIdCreate, input);
+	}
+
+	public String getRandomRoomId(Connection con) throws SQLException {
+		return auctionInterface.getRandomRoomId(con);
 	}
 
 	public void insertIntoRoomList(Connection con, String roomId) throws SQLException {
@@ -148,7 +152,7 @@ public class AuctionService implements AuctionInterface {
 	public RoomStatusResponse getRoomStatus(Connection con, String roomId, String roomStatus) throws SQLException {
 		return auctionInterface.getRoomStatus(con, roomId, roomStatus);
 	}
-	
+
 	public String getRandomTeam(Connection con, String roomId) throws SQLException {
 		return auctionInterface.getRandomTeam(con, roomId);
 	}
