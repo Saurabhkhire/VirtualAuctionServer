@@ -20,6 +20,7 @@ import com.auction.virtualauctionserver.model.AuctionParams;
 import com.auction.virtualauctionserver.model.Bid;
 import com.auction.virtualauctionserver.model.Login;
 import com.auction.virtualauctionserver.model.NamesList;
+import com.auction.virtualauctionserver.model.OtpInfo;
 import com.auction.virtualauctionserver.model.PlayerInfo;
 import com.auction.virtualauctionserver.model.PlayerInfoList;
 import com.auction.virtualauctionserver.model.PlayerName;
@@ -29,8 +30,8 @@ import com.auction.virtualauctionserver.model.ResponseMessage;
 import com.auction.virtualauctionserver.model.RoomInfo;
 import com.auction.virtualauctionserver.model.RoomStatus;
 import com.auction.virtualauctionserver.model.RoomStatusResponse;
-import com.auction.virtualauctionserver.model.SkipInfo;
 import com.auction.virtualauctionserver.model.Team;
+import com.auction.virtualauctionserver.model.UpdateDetails;
 import com.auction.virtualauctionserver.model.Username;
 import com.auction.virtualauctionserver.service.AuctionInterface;
 import com.auction.virtualauctionserver.service.AuctionService;
@@ -71,23 +72,114 @@ public class AuctionController {
 		return responseMessage;
 	}
 
-	//
-
-	@PostMapping("/createroom/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
+	@PostMapping("/updateuserdetails/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
 	@ResponseBody
-	public RoomInfo createRoom(@RequestBody Username username) throws SQLException, ClassNotFoundException {
+	public ResponseMessage updateUserDetails(@RequestBody UpdateDetails updateDetails)
+			throws SQLException, ClassNotFoundException {
 
 		// AuctionInterface auctionService = new AuctionService();
 
 		// Connection con =
 		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
 		// "123456");
-		RoomInfo roomInfo = AuctionRoom.createRoom(username);
+		ResponseMessage responseMessage = LoginRegister.updateUserDetails(updateDetails);
+		// con.close();
+
+		return responseMessage;
+	}
+
+	@PostMapping("/deleteuser/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
+	@ResponseBody
+	public ResponseMessage deleteUser(@RequestBody Username username) throws SQLException, ClassNotFoundException {
+
+		// AuctionInterface auctionService = new AuctionService();
+
+		// Connection con =
+		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
+		// "123456");
+		ResponseMessage responseMessage = LoginRegister.deleteUser(username);
+		// con.close();
+
+		return responseMessage;
+	}
+
+	@PostMapping("/getuserbyphonenumber/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
+	@ResponseBody
+	public Username getUserByPhoneNumber(@RequestBody Register register) throws SQLException, ClassNotFoundException {
+
+		// AuctionInterface auctionService = new AuctionService();
+
+		// Connection con =
+		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
+		// "123456");
+		Username username = LoginRegister.getUserByPhoneNumber(register);
+		// con.close();
+
+		return username;
+	}
+
+	@PostMapping("/generateotp/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
+	@ResponseBody
+	public ResponseMessage generateOtp(@RequestBody OtpInfo otpInfo) throws SQLException, ClassNotFoundException {
+
+		// AuctionInterface auctionService = new AuctionService();
+
+		// Connection con =
+		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
+		// "123456");
+		ResponseMessage responseMessage = LoginRegister.generateOtp(otpInfo);
+		// con.close();
+
+		return responseMessage;
+	}
+
+	@PostMapping("/verifyotp/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
+	@ResponseBody
+	public ResponseMessage verifyOtp(@RequestBody OtpInfo otpInfo) throws SQLException, ClassNotFoundException {
+
+		// AuctionInterface auctionService = new AuctionService();
+
+		// Connection con =
+		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
+		// "123456");
+		ResponseMessage responseMessage = LoginRegister.verifyOtp(otpInfo);
+		// con.close();
+
+		return responseMessage;
+	}
+
+	@PostMapping("/resetpassword/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
+	@ResponseBody
+	public ResponseMessage resetPassword(@RequestBody Login login) throws SQLException, ClassNotFoundException {
+
+		// AuctionInterface auctionService = new AuctionService();
+
+		// Connection con =
+		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
+		// "123456");
+		ResponseMessage responseMessage = LoginRegister.resetPassword(login);
+		// con.close();
+
+		return responseMessage;
+	}
+
+	//
+
+	@PostMapping("/createroom/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
+	@ResponseBody
+	public RoomInfo createRoom(@RequestBody RoomInfo roomInfoReq) throws SQLException, ClassNotFoundException {
+
+		// AuctionInterface auctionService = new AuctionService();
+
+		// Connection con =
+		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
+		// "123456");
+		RoomInfo roomInfo = AuctionRoom.createRoom(roomInfoReq);
 		// con.close();
 
 		return roomInfo;
 	}
-	
+
 	@PostMapping("/joinrandomroom/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
 	@ResponseBody
 	public RoomInfo joinRandomRoom(@RequestBody Username username) throws SQLException, ClassNotFoundException {
@@ -105,14 +197,14 @@ public class AuctionController {
 
 	@PostMapping("/joinroom/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
 	@ResponseBody
-	public RoomStatus joinRoom(@RequestBody RoomInfo roomInfo) throws SQLException, ClassNotFoundException {
+	public RoomStatusResponse joinRoom(@RequestBody RoomInfo roomInfo) throws SQLException, ClassNotFoundException {
 
 		// AuctionInterface auctionService = new AuctionService();
 
 		// Connection con =
 		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
 		// "123456");
-		RoomStatus roomStatusResponse = AuctionRoom.joinRoom(roomInfo);
+		RoomStatusResponse roomStatusResponse = AuctionRoom.joinRoom(roomInfo);
 		// con.close();
 
 		return roomStatusResponse;
@@ -225,14 +317,14 @@ public class AuctionController {
 
 	@PostMapping("/skipsets/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
 	@ResponseBody
-	public ResponseMessage skipSets(@RequestBody SkipInfo skipInfo) throws SQLException, ClassNotFoundException {
+	public ResponseMessage skipSets(@RequestBody RoomStatus roomStatus) throws SQLException, ClassNotFoundException {
 
 		// AuctionInterface auctionService = new AuctionService();
 
 		// Connection con =
 		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
 		// "123456");
-		ResponseMessage responseMessage = Auction.skipSets(skipInfo);
+		ResponseMessage responseMessage = Auction.skipSets(roomStatus);
 		// con.close();
 		return responseMessage;
 	}
@@ -311,14 +403,14 @@ public class AuctionController {
 
 	@PostMapping("/getunsoldplayerslist/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
 	@ResponseBody
-	public NamesList getUnsoldPlayersList(@RequestBody RoomInfo roomInfo) throws SQLException, ClassNotFoundException {
+	public NamesList getUnsoldPlayersList(@RequestBody Team team) throws SQLException, ClassNotFoundException {
 
 		// AuctionInterface auctionService = new AuctionService();
 
 		// Connection con =
 		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
 		// "123456");
-		NamesList namesList = Auction.getUnsoldPlayersList(roomInfo);
+		NamesList namesList = Auction.getUnsoldPlayersList(team);
 		// con.close();
 
 		return namesList;
@@ -357,7 +449,7 @@ public class AuctionController {
 
 	@PostMapping("/getcurrentsetplayerslist/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
 	@ResponseBody
-	public NamesList getCurrentSetPlayersList(@RequestBody RoomInfo roomInfo)
+	public PlayerInfoList getCurrentSetPlayersList(@RequestBody RoomInfo roomInfo)
 			throws SQLException, ClassNotFoundException {
 
 		// AuctionInterface auctionService = new AuctionService();
@@ -365,10 +457,10 @@ public class AuctionController {
 		// Connection con =
 		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
 		// "123456");
-		NamesList namesList = Auction.getCurrentSetPlayersList(roomInfo);
+		PlayerInfoList playerInfoList = Auction.getCurrentSetPlayersList(roomInfo);
 		// con.close();
 
-		return namesList;
+		return playerInfoList;
 	}
 
 	@PostMapping("/gettotalunsoldplayerslist/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
@@ -401,10 +493,11 @@ public class AuctionController {
 
 		return playerInfoList;
 	}
-	
+
 	@PostMapping("/addplayertoteamafterauction/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
 	@ResponseBody
-	public ResponseMessage addPlayerToTeamAfterAuction(@RequestBody PlayerName playerName) throws SQLException, ClassNotFoundException {
+	public ResponseMessage addPlayerToTeamAfterAuction(@RequestBody PlayerName playerName)
+			throws SQLException, ClassNotFoundException {
 
 		// AuctionInterface auctionService = new AuctionService();
 
@@ -412,6 +505,37 @@ public class AuctionController {
 		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
 		// "123456");
 		ResponseMessage responseMessage = Auction.addPlayerToTeamAfterAuction(playerName);
+		// con.close();
+
+		return responseMessage;
+	}
+
+	@PostMapping("/gettotalplayerslist/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
+	@ResponseBody
+	public PlayerInfoList getTotalPlayersList(@RequestBody RoomInfo roomInfo)
+			throws SQLException, ClassNotFoundException {
+
+		// AuctionInterface auctionService = new AuctionService();
+
+		// Connection con =
+		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
+		// "123456");
+		PlayerInfoList playerInfoList = Auction.getTotalPlayersList(roomInfo);
+		// con.close();
+
+		return playerInfoList;
+	}
+
+	@PostMapping("/getplayerteam/") // http://localhost:8080/playerselect?set=set1_batsman&sessionId
+	@ResponseBody
+	public ResponseMessage getPlayerTeam(@RequestBody RoomInfo roomInfo) throws SQLException, ClassNotFoundException {
+
+		// AuctionInterface auctionService = new AuctionService();
+
+		// Connection con =
+		// auctionService.getConnection("jdbc:mysql://localhost/virtualauction", "root",
+		// "123456");
+		ResponseMessage responseMessage = Auction.getPlayerTeam(roomInfo);
 		// con.close();
 
 		return responseMessage;

@@ -10,6 +10,9 @@ public class PlayerInfo extends AuctionInfo {
 	private String bowlingStyle;
 	private String battingPosition;
 	private int totalPriceinLakhs;
+	private double totalPriceInCrores;
+	private String playerImage1Uri;
+	private String playerImage2Uri;
 
 	public int getPlayerId() {
 		return playerId;
@@ -73,6 +76,30 @@ public class PlayerInfo extends AuctionInfo {
 
 	public void setTotalPriceinLakhs(int totalPriceinLakhs) {
 		this.totalPriceinLakhs = totalPriceinLakhs;
+	}
+
+	public String getPlayerImage1Uri() {
+		return playerImage1Uri;
+	}
+
+	public void setPlayerImage1Uri(String string) {
+		this.playerImage1Uri = string;
+	}
+
+	public String getPlayerImage2Uri() {
+		return playerImage2Uri;
+	}
+
+	public void setPlayerImage2Uri(String playerImage2Uri) {
+		this.playerImage2Uri = playerImage2Uri;
+	}
+
+	public double getTotalPriceInCrores() {
+		return totalPriceInCrores;
+	}
+
+	public void setTotalPriceInCrores(double totalPriceInCrores) {
+		this.totalPriceInCrores = totalPriceInCrores;
 	}
 
 }

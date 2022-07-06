@@ -2,11 +2,8 @@ package com.auction.virtualauctionserver.service;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
 import com.auction.virtualauctionserver.dao.AuctionDAO;
-import com.auction.virtualauctionserver.model.AuctionInfo;
 import com.auction.virtualauctionserver.model.AuctionParams;
-import com.auction.virtualauctionserver.model.Bid;
 import com.auction.virtualauctionserver.model.Login;
 import com.auction.virtualauctionserver.model.NamesList;
 import com.auction.virtualauctionserver.model.PlayerInfo;
@@ -14,6 +11,7 @@ import com.auction.virtualauctionserver.model.PlayerInfoList;
 import com.auction.virtualauctionserver.model.PlayerStatus;
 import com.auction.virtualauctionserver.model.Register;
 import com.auction.virtualauctionserver.model.RoomStatusResponse;
+import com.auction.virtualauctionserver.model.UpdateDetails;
 
 public class AuctionService implements AuctionInterface {
 
@@ -81,12 +79,57 @@ public class AuctionService implements AuctionInterface {
 		auctionInterface.updateAuctionParams(con, roomId, auctionParams);
 	}
 
-	public boolean login(Connection con, Login login) throws SQLException {
+	public String getUserNameByPhoneNumber(Connection con, String phoneNumber) throws SQLException {
+		return auctionInterface.getUserNameByPhoneNumber(con, phoneNumber);
+	}
+
+	public String checkUserAndPhoneNumber(Connection con, Register register) throws SQLException {
+		return auctionInterface.checkUserAndPhoneNumber(con, register);
+	}
+
+	public void updateOtp(Connection con, String username, int otp) throws SQLException {
+		auctionInterface.updateOtp(con, username, otp);
+	}
+
+	public boolean otpExistsCheck(Connection con, String username, int otp, String otpOperationType)
+			throws SQLException {
+		return auctionInterface.otpExistsCheck(con, username, otp, otpOperationType);
+	}
+
+	public void updatePassword(Connection con, String username, String password) throws SQLException {
+		auctionInterface.updatePassword(con, username, password);
+	}
+
+	public boolean userExistsCheck(Connection con, String username, String input) throws SQLException {
+		return auctionInterface.userExistsCheck(con, username, input);
+	}
+
+	public Register getUserDetails(Connection con, String username) throws SQLException {
+		return auctionInterface.getUserDetails(con, username);
+	}
+
+	public void updateUserDetails(Connection con, UpdateDetails updateDetails) throws SQLException {
+		auctionInterface.updateUserDetails(con, updateDetails);
+	}
+
+	public String login(Connection con, Login login) throws SQLException {
 		return auctionInterface.login(con, login);
 	}
 
 	public void register(Connection con, Register register) throws SQLException {
 		auctionInterface.register(con, register);
+	}
+
+	public void insertTempOtp(Connection con, String username, int otp) throws SQLException {
+		auctionInterface.insertTempOtp(con, username, otp);
+	}
+
+	public void deleteTempOtp(Connection con, String username) throws SQLException {
+		auctionInterface.deleteTempOtp(con, username);
+	}
+
+	public void deleteUser(Connection con, String username) throws SQLException {
+		auctionInterface.deleteUser(con, username);
 	}
 
 	public String getRoomResult(Connection con, String roomIdCreate, String input) throws SQLException {
@@ -97,8 +140,9 @@ public class AuctionService implements AuctionInterface {
 		return auctionInterface.getRandomRoomId(con);
 	}
 
-	public void insertIntoRoomList(Connection con, String roomId) throws SQLException {
-		auctionInterface.insertIntoRoomList(con, roomId);
+	public void insertIntoRoomList(Connection con, String roomId, String visibility, String roomPassword)
+			throws SQLException {
+		auctionInterface.insertIntoRoomList(con, roomId, visibility, roomPassword);
 	}
 
 	public void insertPlayerIntoRoom(Connection con, String roomId, String username, String host) throws SQLException {
@@ -153,8 +197,20 @@ public class AuctionService implements AuctionInterface {
 		return auctionInterface.getRoomStatus(con, roomId, roomStatus);
 	}
 
-	public String getRandomTeam(Connection con, String roomId) throws SQLException {
-		return auctionInterface.getRandomTeam(con, roomId);
+	public String getUnSelectedTeams(Connection con, String roomId) throws SQLException {
+		return auctionInterface.getUnSelectedTeams(con, roomId);
+	}
+
+	public String getUserOnlineDetails(Connection con, String roomId) throws SQLException {
+		return auctionInterface.getUserOnlineDetails(con, roomId);
+	}
+
+	public void setUserDateTime(Connection con, String roomId, String username) throws SQLException {
+		auctionInterface.setUserDateTime(con, roomId, username);
+	}
+
+	public void updateAuctionBreakTime(Connection con, String roomId, int time) throws SQLException {
+		auctionInterface.updateAuctionBreakTime(con, roomId, time);
 	}
 
 	public void updateTeam(Connection con, String roomId, String username, String team) throws SQLException {
@@ -174,6 +230,10 @@ public class AuctionService implements AuctionInterface {
 		auctionInterface.updatePrice(con, roomId, round, playerName, team, totalPrice);
 	}
 
+	public String getCurrentSet(Connection con, String roomId, String round) throws SQLException {
+		return auctionInterface.getCurrentSet(con, roomId, round);
+	}
+
 	public String getTime(Connection con, String roomId, String round) throws SQLException {
 		return auctionInterface.getTime(con, roomId, round);
 	}
@@ -185,6 +245,11 @@ public class AuctionService implements AuctionInterface {
 
 	public PlayerStatus playerStatus(Connection con, String roomId, String round) throws SQLException {
 		return auctionInterface.playerStatus(con, roomId, round);
+	}
+
+	public PlayerStatus playerStatusFromInformation(Connection con, String roomId, PlayerStatus playerStatus)
+			throws SQLException {
+		return auctionInterface.playerStatusFromInformation(con, roomId, playerStatus);
 	}
 
 	public PlayerStatus teamStatus(Connection con, String roomId, String team, PlayerStatus playerStatus)
@@ -203,6 +268,11 @@ public class AuctionService implements AuctionInterface {
 	public void addPlayerInfo(Connection con, String roomId, String round, String set, int initialTime,
 			PlayerInfo playerInfo) throws SQLException {
 		auctionInterface.addPlayerInfo(con, roomId, round, set, initialTime, playerInfo);
+	}
+
+	public PlayerInfo getPlayerInfoToAddFromInformation(Connection con, String name, PlayerInfo playerInfo)
+			throws SQLException {
+		return auctionInterface.getPlayerInfoToAddFromInformation(con, name, playerInfo);
 	}
 
 	public void addPlayerInfoAfterBid(Connection con, String roomId, String round, String set,
@@ -229,16 +299,22 @@ public class AuctionService implements AuctionInterface {
 		return auctionInterface.getUsernamesList(con, roomId, roomStatus, username);
 	}
 
-	public NamesList getUnsoldPlayersList(Connection con, String roomId) throws SQLException {
-		return auctionInterface.getUnsoldPlayersList(con, roomId);
+	public NamesList getUnsoldPlayersList(Connection con, String roomId, String type, int budget) throws SQLException {
+		return auctionInterface.getUnsoldPlayersList(con, roomId, type, budget);
 	}
 
 	public NamesList getCurrentSetPlayersList(Connection con, String set) throws SQLException {
-		return auctionInterface.getUnsoldPlayersList(con, set);
+		return auctionInterface.getCurrentSetPlayersList(con, set);
 	}
 
 	public PlayerInfoList playerInfoList(Connection con, String roomId, String team) throws SQLException {
 		return auctionInterface.playerInfoList(con, roomId, team);
+	}
+
+	public PlayerInfoList playerInfoListFromInformation(Connection con, String roomId, String playerListForDB,
+			String playerListForOrder, PlayerInfoList playerInfoList) throws SQLException {
+		return auctionInterface.playerInfoListFromInformation(con, roomId, playerListForDB, playerListForOrder,
+				playerInfoList);
 	}
 
 }

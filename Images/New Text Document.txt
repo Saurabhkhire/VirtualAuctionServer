@@ -1,0 +1,8 @@
+https://anyconv.com/image-to-png-converter/
+
+
+https://stackoverflow.com/questions/9476662/how-to-set-android-layout-to-support-all-screen-sizes
+
+https://www.youtube.com/watch?v=5lSQcJjZPFs
+
+https://stackoverflow.com/questions/8255985/how-to-support-different-screen-size-in-android

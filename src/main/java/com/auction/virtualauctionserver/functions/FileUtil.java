@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter;
 
 public class FileUtil {
 
-	public static void createAndUpdateErrorLog(String roomId, Exception exception) {
+	public static void createAndUpdateErrorLog(String roomId, String method, Exception exception) {
 
 		File logFolder = new File(Constants.LOG_FOLDER_LOCATION);
 
@@ -31,7 +31,7 @@ public class FileUtil {
 			}
 
 			bufferedWriter.newLine();
-			bufferedWriter.append(currentDateTime() + exception.getMessage());
+			bufferedWriter.append(currentDateTime() + " " + method + " " + exception.getMessage());
 
 		} catch (Exception ex) {
 			ex.printStackTrace();

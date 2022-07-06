@@ -1,0 +1,3 @@
+Heading
+2022-06-181 19:06:50.507 AuctionRoom#createRoom Duplicate entry '2' for key 'PRIMARY'
+2022-06-181 21:06:76.768 AuctionRoom#createRoom Duplicate entry '2' for key 'PRIMARY'
